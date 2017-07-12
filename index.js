@@ -1,9 +1,9 @@
-require('dotenv').config()
-
 var GitHubApi = require("github");
 var stream = require('stream');
 var request = require('request');
 var aws = require('aws-sdk');
+
+require('dotenv').config();
 
 var github = new GitHubApi();
 
@@ -25,9 +25,12 @@ github.authenticate({
 });
 
 github.repos.getAll({
-  type: 'owner',
-  per_page: 100
+  // type: 'owner',
+  per_page: 1000
 }, function(err, result) {
+
+  console.log('Found ' + result.data.length + ' repos to backup');
+  console.log('-------------------------------------------------');
 
   result.data.forEach(repo => {
     var s3 = new aws.S3();
