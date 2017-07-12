@@ -6,7 +6,7 @@
   "dependencies": {
     "aws-sdk": "^2.82.0",
     "github": "^9.2.0",
-    "tar.gz": "^1.0.5"
+    "request": "^2.81.0",
   },
   "devDependencies": {},
   "keywords": [
