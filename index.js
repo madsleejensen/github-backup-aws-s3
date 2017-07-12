@@ -26,14 +26,14 @@ github.authenticate({
 
 github.repos.getAll({
   type: 'owner',
-  per_page: 1
+  per_page: 100
 }, function(err, result) {
 
   result.data.forEach(repo => {
     var s3 = new aws.S3();
     var passThroughStream = new stream.PassThrough();
 
-    var arhiveURL = 'https://api.github.com/repos/madsleejensen/volt-fasttrack-backend/tarball/master?access_token=' + process.env.GITHUB_ACCESS_TOKEN;
+    var arhiveURL = 'https://api.github.com/repos/' + repo.full_name + '/tarball/master?access_token=' + process.env.GITHUB_ACCESS_TOKEN;
     var options = {
       url: arhiveURL,
       headers: {
@@ -52,7 +52,7 @@ github.repos.getAll({
     };
 
     s3.upload(params, function(err, data) {
-
+      console.log('[✓] ' + repo.full_name + '.git - backed up')
     });
   })
 })
