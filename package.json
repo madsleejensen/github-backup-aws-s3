@@ -1,0 +1,20 @@
+{
+  "name": "github-backup-aws-s3",
+  "version": "1.0.0",
+  "description": "simple tool to backup github user repos to and aws s3 bucket",
+  "main": "index.js",
+  "dependencies": {
+    "aws-sdk": "^2.82.0",
+    "github": "^9.2.0",
+    "tar.gz": "^1.0.5"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "backup",
+    "s3",
+    "aws",
+    "github"
+  ],
+  "author": "Mads Lee Jensen",
+  "license": "MIT"
+}
