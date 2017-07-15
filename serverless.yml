@@ -1,0 +1,29 @@
+service: github-backup-aws-s3-service
+provider:
+  name: aws
+  runtime: nodejs6.10
+  region: eu-west-1
+  timeout: 300
+
+# you can add statements to the Lambda function's IAM Role here
+#  iamRoleStatements:
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:ListBucket"
+#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:PutObject"
+#      Resource:
+#        Fn::Join:
+#          - ""
+#          - - "arn:aws:s3:::"
+#            - "Ref" : "ServerlessDeploymentBucket"
+#            - "/*"
+custom:
+  rate: "1 minute" # http://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html#RateExpressions
+functions:
+  runBackup:
+    handler: handler.runBackup
+    events:
+      - schedule: rate(${opt:rate, self:custom.rate})
