@@ -4,21 +4,19 @@ var request = require('request');
 var aws = require('aws-sdk');
 
 var github = new GitHubApi();
+var requiredOptions = ['githubAccessToken', 's3BucketName', 's3AccessKeyId', 's3AccessSecretKey']
 
-module.exports = function(callback) {
-  if (!process.env.GITHUB_ACCESS_TOKEN) {
-    console.log('missing environment variable `GITHUB_ACCESS_TOKEN`');
-    process.exit(1);
-  }
-
-  if (!process.env.AWS_S3_BUCKET_NAME) {
-    console.log('missing environment variable `AWS_S3_BUCKET_NAME`');
-    process.exit(1);
-  }
+module.exports = function(options, callback) {
+  requiredOptions.forEach(key => {
+    if (!options[key]) {
+      console.error('missing option `' + key + '`');
+      process.exit(1);
+    }
+  })
 
   github.authenticate({
-      type: "token",
-      token: process.env.GITHUB_ACCESS_TOKEN
+    type: "token",
+    token: options.githubAccessToken
   });
 
   var repos = [];
@@ -47,29 +45,29 @@ module.exports = function(callback) {
 
     repos.forEach(repo => {
       var s3 = new aws.S3({
-        accessKeyId: process.env.AWS_S3_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_S3_SECRET_ACCESS_KEY
+        accessKeyId: options.s3AccessKeyId,
+        secretAccessKey: options.s3AccessSecretKey,
       });
 
       var passThroughStream = new stream.PassThrough();
 
-      var arhiveURL = 'https://api.github.com/repos/' + repo.full_name + '/tarball/master?access_token=' + process.env.GITHUB_ACCESS_TOKEN;
-      var options = {
+      var arhiveURL = 'https://api.github.com/repos/' + repo.full_name + '/tarball/master?access_token=' + options.githubAccessToken;
+      var requestOptions = {
         url: arhiveURL,
         headers: {
           'User-Agent': 'nodejs'
         }
       };
 
-      request(options).pipe(passThroughStream);
+      request(requestOptions).pipe(passThroughStream);
 
-      var bucketName = process.env.AWS_S3_BUCKET_NAME;
+      var bucketName = options.s3BucketName;
       var objectName = date + '/' + repo.full_name + '.tar.gz';
       var params = {
         Bucket: bucketName,
         Key: objectName,
         Body: passThroughStream,
-        StorageClass: process.env.AWS_S3_STORAGE_CLASS || 'STANDARD',
+        StorageClass: options.s3StorageClass || 'STANDARD',
         ServerSideEncryption: 'AES256'
       };
 
