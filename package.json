@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "aws-sdk": "^2.82.0",
+    "bluebird": "^3.5.0",
     "dotenv": "^4.0.0",
     "github": "^9.2.0",
     "request": "^2.81.0"

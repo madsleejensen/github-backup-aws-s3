@@ -1,12 +1,13 @@
-var GitHubApi = require("github");
-var stream = require('stream');
-var request = require('request');
-var aws = require('aws-sdk');
+const GitHubApi = require("github");
+const stream = require('stream');
+const request = require('request');
+const aws = require('aws-sdk');
+const Promise = require('bluebird');
 
-var github = new GitHubApi();
-var requiredOptions = ['githubAccessToken', 's3BucketName', 's3AccessKeyId', 's3AccessSecretKey']
+const github = new GitHubApi();
+const requiredOptions = ['githubAccessToken', 's3BucketName', 's3AccessKeyId', 's3AccessSecretKey']
 
-module.exports = function(options, callback) {
+module.exports = function(options) {
   requiredOptions.forEach(key => {
     if (!options[key]) {
       console.error('missing option `' + key + '`');
@@ -14,45 +15,48 @@ module.exports = function(options, callback) {
     }
   })
 
-  github.authenticate({
-    type: "token",
-    token: options.githubAccessToken
-  });
+  function getAllRepos() {
+    return new Promise((resolve, reject) => {
+      github.authenticate({
+        type: "token",
+        token: options.githubAccessToken
+      });
 
-  var repos = [];
+      let repos = [];
 
-  github.repos.getAll({ per_page: 100 }, handleReposResponse);
+      github.repos.getAll({ per_page: 100 }, handleReposResponse);
 
-  function handleReposResponse(err, res) {
-      if (err) {
-        console.log('Error fetching github repos', err);
-        return;
+      function handleReposResponse(err, res) {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        repos = repos.concat(res['data']);
+        if (github.hasNextPage(res)) {
+          github.getNextPage(res, handleReposResponse)
+        } else {
+          resolve(repos);
+        }
       }
-
-      repos = repos.concat(res['data']);
-      if (github.hasNextPage(res)) {
-        github.getNextPage(res, handleReposResponse)
-      } else {
-        allReposLoaded(repos);
-      }
+    });
   }
 
-  function allReposLoaded (repos) {
+  function copyReposToS3 (repos) {
     console.log('Found ' + repos.length + ' repos to backup');
     console.log('-------------------------------------------------');
 
-    var date = new Date().toISOString();
+    const date = new Date().toISOString();
+    const s3 = new aws.S3({
+      accessKeyId: options.s3AccessKeyId,
+      secretAccessKey: options.s3AccessSecretKey,
+    });
 
-    repos.forEach(repo => {
-      var s3 = new aws.S3({
-        accessKeyId: options.s3AccessKeyId,
-        secretAccessKey: options.s3AccessSecretKey,
-      });
-
-      var passThroughStream = new stream.PassThrough();
-
-      var arhiveURL = 'https://api.github.com/repos/' + repo.full_name + '/tarball/master?access_token=' + options.githubAccessToken;
-      var requestOptions = {
+    const uploader = Promise.promisify(s3.upload.bind(s3));
+    const tasks = repos.map(repo => {
+      const passThroughStream = new stream.PassThrough();
+      const arhiveURL = 'https://api.github.com/repos/' + repo.full_name + '/tarball/master?access_token=' + options.githubAccessToken;
+      const requestOptions = {
         url: arhiveURL,
         headers: {
           'User-Agent': 'nodejs'
@@ -61,9 +65,9 @@ module.exports = function(options, callback) {
 
       request(requestOptions).pipe(passThroughStream);
 
-      var bucketName = options.s3BucketName;
-      var objectName = date + '/' + repo.full_name + '.tar.gz';
-      var params = {
+      const bucketName = options.s3BucketName;
+      const objectName = date + '/' + repo.full_name + '.tar.gz';
+      const params = {
         Bucket: bucketName,
         Key: objectName,
         Body: passThroughStream,
@@ -71,14 +75,15 @@ module.exports = function(options, callback) {
         ServerSideEncryption: 'AES256'
       };
 
-      s3.upload(params, function(err, data) {
-        if (err) {
-          console.error('[x] ' + repo.full_name + '.git - failed to backup', err);
-          return;
+      return uploader(params).then(
+        result => {
+          console.log('[✓] ' + repo.full_name + '.git - backed up')
         }
+      );
+    });
 
-        console.log('[✓] ' + repo.full_name + '.git - backed up')
-      });
-    })
+    return Promise.all(tasks);
   };
+
+  return getAllRepos().then(copyReposToS3);
 }
