@@ -21,7 +21,6 @@ module.exports = function(callback) {
       token: process.env.GITHUB_ACCESS_TOKEN
   });
 
-
   var repos = [];
 
   github.repos.getAll({ per_page: 100 }, handleReposResponse);
@@ -47,7 +46,11 @@ module.exports = function(callback) {
     var date = new Date().toISOString();
 
     repos.forEach(repo => {
-      var s3 = new aws.S3();
+      var s3 = new aws.S3({
+        accessKeyId: process.env.AWS_S3_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_S3_SECRET_ACCESS_KEY
+      });
+
       var passThroughStream = new stream.PassThrough();
 
       var arhiveURL = 'https://api.github.com/repos/' + repo.full_name + '/tarball/master?access_token=' + process.env.GITHUB_ACCESS_TOKEN;
