@@ -16,4 +16,9 @@ npm install -g serverless
 
 optionally make modifications to serverless.yml and run
 
-```serverless deploy```
+http://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+```
+serverless deploy -v --schedule-expression 'rate(2 hours)'
+serverless deploy -v --schedule-expression 'rate(0 * * * ? *)'
+serverless deploy -v --schedule-expression 'cron(*/5 * * * ? *)'
+```
