@@ -12,6 +12,8 @@
   },
   "devDependencies": {},
   "keywords": [
+    "serverless",
+    "lambda",
     "backup",
     "s3",
     "aws",
