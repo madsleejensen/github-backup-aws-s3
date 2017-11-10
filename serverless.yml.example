@@ -2,7 +2,7 @@ service: github-backup-aws-s3-service
 provider:
   name: aws
   runtime: nodejs6.10
-  region: eu-west-1
+  region: eu-west-2
   timeout: 300
 functions:
   runBackup:
