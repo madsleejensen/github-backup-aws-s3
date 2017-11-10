@@ -1,17 +1,22 @@
-const GitHubApi = require("github");
-const stream = require('stream');
-const request = require('request');
-const aws = require('aws-sdk');
-const Promise = require('bluebird');
+const GitHubApi = require("github")
+const stream = require("stream")
+const request = require("request")
+const aws = require("aws-sdk")
+const Promise = require("bluebird")
 
-const github = new GitHubApi();
-const requiredOptions = ['githubAccessToken', 's3BucketName', 's3AccessKeyId', 's3AccessSecretKey']
+const github = new GitHubApi()
+const requiredOptions = [
+  "githubAccessToken",
+  "s3BucketName",
+  "s3AccessKeyId",
+  "s3AccessSecretKey"
+]
 
 module.exports = function(options) {
   requiredOptions.forEach(key => {
     if (!options[key]) {
-      console.error('missing option `' + key + '`');
-      process.exit(1);
+      console.error("missing option `" + key + "`")
+      process.exit(1)
     }
   })
 
@@ -20,70 +25,82 @@ module.exports = function(options) {
       github.authenticate({
         type: "token",
         token: options.githubAccessToken
-      });
+      })
 
-      let repos = [];
+      let repos = []
 
-      github.repos.getAll({ per_page: 100 }, handleReposResponse);
+      if (options.mode === "organisation") {
+        console.log("Running in Organisation mode")
+        github.repos.getForOrg(
+          { org: options.organisation, per_page: 100 },
+          handleReposResponse
+        )
+      } else {
+        // Assume get all repos current user has access to
+        console.log("Running in User mode")
+        github.repos.getAll({ per_page: 100 }, handleReposResponse)
+      }
 
       function handleReposResponse(err, res) {
         if (err) {
-          reject(err);
-          return;
+          reject(err)
+          return
         }
 
-        repos = repos.concat(res['data']);
+        repos = repos.concat(res["data"])
         if (github.hasNextPage(res)) {
           github.getNextPage(res, handleReposResponse)
         } else {
-          resolve(repos);
+          resolve(repos)
         }
       }
-    });
+    })
   }
 
-  function copyReposToS3 (repos) {
-    console.log('Found ' + repos.length + ' repos to backup');
-    console.log('-------------------------------------------------');
+  function copyReposToS3(repos) {
+    console.log("Found " + repos.length + " repos to backup")
+    console.log("-------------------------------------------------")
 
-    const date = new Date().toISOString();
+    const date = new Date().toISOString()
     const s3 = new aws.S3({
       accessKeyId: options.s3AccessKeyId,
-      secretAccessKey: options.s3AccessSecretKey,
-    });
+      secretAccessKey: options.s3AccessSecretKey
+    })
 
-    const uploader = Promise.promisify(s3.upload.bind(s3));
+    const uploader = Promise.promisify(s3.upload.bind(s3))
     const tasks = repos.map(repo => {
-      const passThroughStream = new stream.PassThrough();
-      const arhiveURL = 'https://api.github.com/repos/' + repo.full_name + '/tarball/master?access_token=' + options.githubAccessToken;
+      const passThroughStream = new stream.PassThrough()
+      const arhiveURL =
+        "https://api.github.com/repos/" +
+        repo.full_name +
+        "/tarball/master?access_token=" +
+        options.githubAccessToken
       const requestOptions = {
         url: arhiveURL,
         headers: {
-          'User-Agent': 'nodejs'
+          "User-Agent": "nodejs"
         }
-      };
+      }
 
-      request(requestOptions).pipe(passThroughStream);
+      request(requestOptions).pipe(passThroughStream)
 
-      const bucketName = options.s3BucketName;
-      const objectName = date + '/' + repo.full_name + '.tar.gz';
+      const bucketName = options.s3BucketName
+      const objectName = date + "/" + repo.full_name + ".tar.gz"
       const params = {
         Bucket: bucketName,
         Key: objectName,
         Body: passThroughStream,
-        StorageClass: options.s3StorageClass || 'STANDARD',
-        ServerSideEncryption: 'AES256'
-      };
+        StorageClass: options.s3StorageClass || "STANDARD",
+        ServerSideEncryption: "AES256"
+      }
 
-      return uploader(params).then(
-        result => {
-          console.log('[✓] ' + repo.full_name + '.git - backed up')
-        }
-      );
-    });
+      return uploader(params).then(result => {
+        console.log("[✓] " + repo.full_name + ".git - backed up")
+      })
+    })
 
-    return Promise.all(tasks);
-  };
+    return Promise.all(tasks)
+  }
 
-  return getAllRepos().then(copyReposToS3);
+  return getAllRepos().then(copyReposToS3)
 }

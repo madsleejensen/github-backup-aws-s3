@@ -1,6 +1,7 @@
 # github-backup-to-s3
 
-simply backup all your repos to a aws s3 bucket.
+A tool to backup all your github repos to a aws s3 bucket.
+It can optionally backup just an organisation's repositories.
 
 ## Usage
 
@@ -31,13 +32,22 @@ the policy could look something like:
 }
 ```
 
-### run locally
+### Run in organisation module
+
+In your `.env`, set:
+
+`GITHUB_ORGANISATION` to the name of the Organisation
+
+`BACKUP_MODE=organisation`
+
+
+### Run locally
 
 ```
 node index.js
 ```
 
-### deploy to aws lambda
+### Deploy to aws lambda
 
 it might be more useful to deploy it with a schedule on aws lambda, so it will backup with a given interval.
 
