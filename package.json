@@ -4,11 +4,12 @@
   "description": "simple tool to backup github user repos to and aws s3 bucket",
   "main": "index.js",
   "dependencies": {
-    "aws-sdk": "^2.82.0",
+    "aws-sdk": "^2.178.0",
     "bluebird": "^3.5.0",
     "dotenv": "^4.0.0",
-    "github": "^9.2.0",
-    "request": "^2.81.0"
+    "github": "^12.0.0",
+    "request": "^2.81.0",
+    "snyk": "^1.342.1"
   },
   "devDependencies": {},
   "keywords": [
@@ -20,5 +21,10 @@
     "github"
   ],
   "author": "Mads Lee Jensen",
-  "license": "MIT"
+  "license": "MIT",
+  "scripts": {
+    "snyk-protect": "snyk protect",
+    "prepare": "yarn run snyk-protect"
+  },
+  "snyk": true
 }

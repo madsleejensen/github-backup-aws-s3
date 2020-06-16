@@ -1,0 +1,29 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.15.0
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  'npm:extend:20180424':
+    - request > extend:
+        patched: '2020-06-16T16:09:01.200Z'
+    - github > https-proxy-agent > extend:
+        patched: '2020-06-16T16:09:01.200Z'
+    - github > https-proxy-agent > agent-base > extend:
+        patched: '2020-06-16T16:09:01.200Z'
+  'npm:hoek:20180212':
+    - request > hawk > hoek:
+        patched: '2020-06-16T16:09:01.200Z'
+    - request > hawk > boom > hoek:
+        patched: '2020-06-16T16:09:01.200Z'
+    - request > hawk > sntp > hoek:
+        patched: '2020-06-16T16:09:01.200Z'
+    - request > hawk > cryptiles > boom > hoek:
+        patched: '2020-06-16T16:09:01.200Z'
+  SNYK-JS-LODASH-567746:
+    - aws-sdk > xmlbuilder > lodash:
+        patched: '2020-06-16T16:09:01.200Z'
+    - aws-sdk > xml2js > xmlbuilder > lodash:
+        patched: '2020-06-16T16:09:01.200Z'
+  'npm:stringstream:20180511':
+    - request > stringstream:
+        patched: '2020-06-16T16:09:01.200Z'
