@@ -73,12 +73,14 @@ module.exports = function(options) {
       const arhiveURL =
         "https://api.github.com/repos/" +
         repo.full_name +
-        "/tarball/master?access_token=" +
-        options.githubAccessToken
+        "/tarball/master?access_token="
       const requestOptions = {
         url: arhiveURL,
         headers: {
-          "User-Agent": "nodejs"
+          "User-Agent": "nodejs",
+          "Accept": "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28",
+          "Authorization": "Bearer " + options.githubAccessToken
         }
       }
 
